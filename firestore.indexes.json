@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "tontines",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "createdBy", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {"fieldPath": "tontineId", "order": "ASCENDING"},
+        {"fieldPath": "dueDate", "order": "DESCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
