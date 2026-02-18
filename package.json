@@ -1,0 +1,13 @@
+{
+  "name": "tontitrust",
+  "private": true,
+  "workspaces": ["web", "functions"],
+  "scripts": {
+    "dev": "npm run dev --workspace web",
+    "build": "npm run build --workspace web && npm run lint --workspace functions",
+    "lint": "npm run lint --workspace web && npm run lint --workspace functions",
+    "test": "npm run test --workspace web",
+    "deploy": "firebase deploy",
+    "emulators": "firebase emulators:start"
+  }
+}
