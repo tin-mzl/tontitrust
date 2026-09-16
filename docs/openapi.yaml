@@ -1,0 +1,367 @@
+﻿openapi: 3.1.0
+info:
+  title: TontiTrust REST API
+  description: >
+    API REST de la plateforme fintech TontiTrust pour la gestion et la sécurisation
+    des cycles d'épargne collective (tontines) en Afrique.
+  version: 1.0.0
+  contact:
+    name: Équipe Technique TontiTrust
+    email: dev@tontitrust.test
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Environnement Local / Démo
+  - url: https://api-staging.tontitrust.test/api/v1
+    description: Environnement Staging / Sandbox
+  - url: https://api.tontitrust.africa/api/v1
+    description: Environnement Production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Clé unique d'idempotence pour éviter la duplication des opérations financières.
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Identifiant unique de corrélation pour le traçage distribué et les logs d'audit.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - request_id
+          properties:
+            code:
+              type: string
+              example: TONTINE_NOT_READY
+            message:
+              type: string
+              example: La tontine ne remplit pas les conditions d'activation.
+            field_errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: members
+                  reason:
+                    type: string
+                    example: CAPACITY_NOT_REACHED
+            request_id:
+              type: string
+              example: req_01HX9A2B3C
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phone_e164:
+          type: string
+          example: "+243900000001"
+        status:
+          type: string
+          enum: [PENDING_VERIFICATION, ACTIVE, SUSPENDED, CLOSED]
+        profile:
+          type: object
+          properties:
+            full_name:
+              type: string
+            city:
+              type: string
+            language:
+              type: string
+
+    Tontine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Tontine Espoir
+        amount_minor:
+          type: integer
+          example: 1000000
+        currency:
+          type: string
+          example: CDF
+        frequency:
+          type: string
+          enum: [WEEKLY, BIWEEKLY, MONTHLY, CUSTOM_TEST]
+        member_limit:
+          type: integer
+          minimum: 2
+          maximum: 50
+        status:
+          type: string
+          enum: [DRAFT, RECRUITING, READY, ACTIVE, PAUSED, COMPLETED, CANCELLED]
+        grace_period_hours:
+          type: integer
+          default: 24
+
+paths:
+  /auth/request-otp:
+    post:
+      summary: Demander un code OTP par SMS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone_e164]
+              properties:
+                phone_e164:
+                  type: string
+                  example: "+243900000001"
+      responses:
+        '200':
+          description: Code OTP envoyé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  expires_in_seconds: { type: integer, example: 600 }
+
+  /auth/verify-otp:
+    post:
+      summary: Vérifier le code OTP et ouvrir une session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone_e164, otp_code]
+              properties:
+                phone_e164: { type: string }
+                otp_code: { type: string, example: "123456" }
+      responses:
+        '200':
+          description: Authentification réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user: { $ref: '#/components/schemas/User' }
+
+  /me:
+    get:
+      summary: Récupérer le profil de l'utilisateur connecté
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Profil utilisateur
+    patch:
+      summary: Mettre à jour le profil
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name: { type: string }
+                city: { type: string }
+                language: { type: string }
+      responses:
+        '200':
+          description: Profil mis à jour
+
+  /tontines:
+    get:
+      summary: Lister les tontines accessibles par l'utilisateur
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Liste des tontines
+    post:
+      summary: Créer une tontine en brouillon
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, amount_minor, currency, frequency, member_limit, start_date]
+              properties:
+                name: { type: string, example: "Tontine Espoir" }
+                amount_minor: { type: integer, example: 1000000 }
+                currency: { type: string, example: "CDF" }
+                frequency: { type: string, enum: [WEEKLY, BIWEEKLY, MONTHLY, CUSTOM_TEST] }
+                member_limit: { type: integer, example: 6 }
+                start_date: { type: string, format: date }
+                grace_period_hours: { type: integer, example: 24 }
+                timezone: { type: string, example: "Africa/Kinshasa" }
+                order_mode: { type: string, enum: [MANUAL, RANDOM] }
+      responses:
+        '201':
+          description: Tontine créée en brouillon
+
+  /tontines/{id}/publish:
+    post:
+      summary: Ouvrir le recrutement de membres
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Statut passé à RECRUITING
+
+  /tontines/{id}/lock:
+    post:
+      summary: Verrouiller les paramètres et l'ordre de passage
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Tontine verrouillée et prête pour activation
+
+  /tontines/{id}/activate:
+    post:
+      summary: Activer la tontine et générer tous les cycles et échéances
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Tontine activée avec cycles générés
+
+  /contributions/{id}/payment-intents:
+    post:
+      summary: Initier le paiement d'une cotisation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, phone_number]
+              properties:
+                provider: { type: string, example: "M-PESA" }
+                phone_number: { type: string, example: "+243900000002" }
+      responses:
+        '200':
+          description: Transaction initiée en attente de confirmation/webhook
+
+  /payment-webhooks/{provider}:
+    post:
+      summary: Réception des webhooks signés par les prestataires de paiement
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200':
+          description: Webhook acquitté et dédupliqué
+
+  /cycles/{id}/evaluate-payout:
+    post:
+      summary: Calculer l'éligibilité du cycle à la distribution
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Résultat d'éligibilité (ELIGIBLE ou PENDING)
+
+  /payouts/{id}/initiate:
+    post:
+      summary: Déclencher le versement au bénéficiaire du cycle
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Payout initié et transmis au prestataire
+
+  /admin/dashboard:
+    get:
+      summary: Tableau de bord consolidé pour les administrateurs
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Indicateurs clés, alertes et volumes
+
+  /admin/transactions:
+    get:
+      summary: Rapprochement des transactions et détection d'écarts
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Liste des transactions rapprochées
+
+  /admin/audit-logs:
+    get:
+      summary: Consultation du journal d'audit append-only
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Entrées d'audit horodatées et non altérables
