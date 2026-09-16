@@ -1,0 +1,24 @@
+﻿{
+  "name": "tontitrust",
+  "version": "1.0.0",
+  "description": "Plateforme fintech de tontines digitales sécurisées et transparentes en Afrique",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py",
+    "dev": "python server.py",
+    "test": "python -m unittest discover tests"
+  },
+  "keywords": [
+    "fintech",
+    "tontine",
+    "africa",
+    "rosca",
+    "savings",
+    "supabase",
+    "pwa",
+    "mobile-money"
+  ],
+  "author": "TontiTrust Team",
+  "license": "UNLICENSED",
+  "private": true
+}
