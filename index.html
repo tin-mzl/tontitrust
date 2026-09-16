@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TontiTrust - Démo & MVP Pilote (Fintech Tontines)</title>
+  <link rel="icon" type="image/jpeg" href="./assets/logo.jpg" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#EFF6FF',
+              100: '#DBEAFE',
+              500: '#3B82F6',
+              600: '#2563EB',
+              700: '#1D4ED8',
+              800: '#1E40AF',
+              900: '#1E3A8A',
+              950: '#0F172A',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="./css/app.css" />
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-800 flex flex-col items-center">
+
+  <!-- Top Global Demo Control Bar -->
+  <header class="w-full bg-slate-950 text-white border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl overflow-hidden shadow-md border border-blue-500/40 bg-blue-950 flex items-center justify-center">
+        <img src="./assets/logo.jpg" alt="TontiTrust Logo" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='./public/logo.jpg'" />
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-white text-base tracking-tight">TONTITRUST</span>
+          <span class="bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">DÉMO MVP v1.0</span>
+        </div>
+        <p class="text-[11px] text-slate-400">Plateforme de confiance pour tontines digitales • PRD TT-PRD-TSD-001</p>
+      </div>
+    </div>
+
+    <!-- Mode Selector Navigation -->
+    <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-2xl border border-slate-800 text-xs font-bold">
+      <button id="btn-mode-member" class="mode-btn px-3 py-1.5 rounded-xl bg-blue-600 text-white transition">
+        👤 Espace Membre
+      </button>
+      <button id="btn-mode-organizer" class="mode-btn px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition">
+        👥 Organisateur
+      </button>
+      <button id="btn-mode-admin" class="mode-btn px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition">
+        🛡️ Console Admin
+      </button>
+      <button id="btn-mode-demo" class="mode-btn px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg transition">
+        ⚡ Démo Guidée (11 Étapes)
+      </button>
+    </div>
+
+    <!-- Persona Switcher & Device Frame Toggle -->
+    <div class="flex items-center gap-3 text-xs">
+      <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+        <span class="text-slate-400 text-[11px]">Utilisateur actif :</span>
+        <select id="select-persona" class="bg-transparent text-white font-bold focus:outline-none cursor-pointer">
+          <option value="u001" class="bg-slate-900">Amina K. (Organisateur)</option>
+          <option value="u002" class="bg-slate-900">Patrick M. (Membre 1)</option>
+          <option value="u003" class="bg-slate-900">Chantal N. (Membre 2)</option>
+          <option value="u004" class="bg-slate-900">Junior B. (Bénéficiaire)</option>
+          <option value="admin001" class="bg-slate-900">Admin TontiTrust</option>
+          <option value="sup001" class="bg-slate-900">Support Technique</option>
+        </select>
+      </div>
+
+      <button id="btn-toggle-frame" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition" title="Basculer format Mobile / Plein écran">
+        📱 / 💻
+      </button>
+    </div>
+  </header>
+
+  <!-- Interactive Guided Demo Tour Banner (PRD §21.1) -->
+  <div id="demo-tour-banner" class="w-full max-w-5xl my-4 px-4 hidden">
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 border-2 border-amber-500/50 rounded-3xl p-5 shadow-2xl text-white">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-indigo-900">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center" id="demo-step-badge">1</span>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Scénario de Démonstration Officiel (§21.1)</span>
+            <h3 class="text-base font-extrabold text-white" id="demo-step-title">1. Création / Connexion Organisateur</h3>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-demo-prev" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">← Précédent</button>
+          <button id="btn-demo-action" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition">Exécuter l'étape 1</button>
+          <button id="btn-demo-next" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">Suivant →</button>
+        </div>
+      </div>
+      <p class="text-xs text-slate-300 mt-3" id="demo-step-desc">
+        Amina Kabangu (+243 900 000 001) se connecte avec vérification OTP et configure la « Tontine Espoir ».
+      </p>
+      <div id="demo-step-feedback" class="mt-3 p-3 bg-indigo-900/60 border border-indigo-700/50 rounded-2xl text-xs text-indigo-200 hidden"></div>
+    </div>
+  </div>
+
+  <!-- Main Viewport Device Frame -->
+  <div class="flex-1 w-full flex items-center justify-center p-2 sm:p-6">
+    <div id="app-viewport" class="device-frame">
+      <!-- Dynamic View Mounted Here -->
+    </div>
+  </div>
+
+  <!-- App Bootstrap JS -->
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
